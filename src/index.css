@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        background: linear-gradient(to bottom right, theme('colors.toy.dark'), theme('colors.toy.purple'), theme('colors.toy.black'));
+        color: theme('colors.toy.light');
+        font-family: theme('fontFamily.sans');
+        cursor: none;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overflow-x: hidden;
+        min-height: 100vh;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: theme('fontFamily.display');
+        font-weight: 700;
+    }
+}
+
+@layer utilities {
+    @keyframes float-anim {
+
+        0%,
+        100% {
+            transform: translateY(0px);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .animate-float {
+        animation: float-anim 6s ease-in-out infinite;
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: theme('colors.toy.light');
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: theme('colors.toy.neonBlue');
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: theme('colors.toy.purple');
+}
