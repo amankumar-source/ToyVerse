@@ -1,16 +1,44 @@
-# React + Vite
+# 🧸 ToyVerse
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**ToyVerse** is a 2026-standard, motion-first toy e-commerce experience built with React.  
+It focuses on advanced animations, playful interactions, and immersive UI rather than traditional static layouts.
 
-Currently, two official plugins are available:
+The website behaves like a living toy universe — toys float, react to the cursor, animate on scroll, and create a fun, game-like shopping experience.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## ✨ Key Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Fully animated, interaction-driven UI
+- Custom cursor with physics-based behavior
+- Animated toy visuals (no static product images)
+- Smooth scroll-based scene transitions
+- Age-based and category-based toy sections
+- Mini interactive games integrated into the experience
+- Gamified cart and playful micro-interactions
+- Performance-optimized animations
+- Responsive and accessibility-aware motion
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠 Tech Stack
+
+- React + Vite  
+- Three.js / React Three Fiber  
+- GSAP + ScrollTrigger  
+- Framer Motion  
+- Custom animation & cursor logic  
+
+---
+
+## 🎯 Project Goal
+
+To explore advanced frontend engineering concepts such as motion design, interaction systems, and performance-optimized animations while building a playful yet professional web experience.
+
+---
+
+## 🚀 Getting Started
+
+```bash
+npm install
+npm run dev
