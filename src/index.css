@@ -4,7 +4,7 @@
 
 @layer base {
     body {
-        background: linear-gradient(to bottom right, theme('colors.toy.dark'), theme('colors.toy.purple'), theme('colors.toy.black'));
+        background: linear-gradient(135deg, theme('colors.toy.dark'), theme('colors.toy.purple'), theme('colors.toy.black'));
         color: theme('colors.toy.light');
         font-family: theme('fontFamily.sans');
         cursor: none;

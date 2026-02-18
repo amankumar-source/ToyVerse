@@ -9,6 +9,7 @@ import GameZone from './components/GameZone';
 import Cart from './components/Cart';
 import CustomCursor from './components/CustomCursor';
 import Chatbot from './components/Chatbot';
+import RocketShowcase from './components/RocketShowcase';
 
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
       <GameZone />
       <FeaturedToys />
       <ProductShowcase />
+      <RocketShowcase />
       <StorySection />
 
       <Footer />

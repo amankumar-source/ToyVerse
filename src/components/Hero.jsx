@@ -144,6 +144,7 @@ export default function Hero() {
                 <p className="mt-8 text-2xl md:text-3xl text-toy-dark font-bold bg-white/60 backdrop-blur-md px-10 py-4 rounded-full border-4 border-white shadow-xl animate-bounce-slow">
                     Where Fun Comes to Life! 🚀
                 </p>
+
                 <div className="flex gap-6 mt-12 pointer-events-auto">
                     <button
                         onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}

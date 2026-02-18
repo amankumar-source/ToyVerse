@@ -16,7 +16,11 @@ module.exports = {
                     red: '#ff0055', // Toy Red
                     yellow: '#ffe600', // Sunshine Yellow
                     green: '#00ff9d', // Mint Green
-                    light: '#e0e0e0', // Text light
+                    light: '#ffffff', // Pure white for better contrast
+                    text: '#e0e0e0', // Slightly off-white for body text
+                    primary: '#ff00cc', // Primary brand color
+                    secondary: '#333399', // Secondary brand color
+                    accent: '#00ff9d', // Accent color
                 }
             },
             fontFamily: {
