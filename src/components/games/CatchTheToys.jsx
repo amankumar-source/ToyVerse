@@ -144,6 +144,7 @@ export default function CatchTheToys() {
             clearInterval(timer);
             canvas.removeEventListener('mousedown', handleMouseDown);
             window.removeEventListener('mouseup', handleMouseUp);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
             cancelAnimationFrame(state.current.animId);
         };
     }, [playing, isInView]);
@@ -156,7 +157,17 @@ export default function CatchTheToys() {
                     <p className="text-white mb-2">Click falling toys to catch them!</p>
                     <p className="text-gray-400 mb-6">Last Score: {score}</p>
                     <button
-                        onClick={() => { setPlaying(true); }}
+                        onClick={() => {
+                            state.current = {
+                                toys: [],
+                                lastSpawn: 0,
+                                animId: null,
+                                mouse: { x: 0, y: 0, active: false }
+                            };
+                            setPlaying(true);
+                            setScore(0);
+                            setTimeLeft(30);
+                        }}
                         className="px-8 py-3 bg-toy-neonBlue text-black font-bold rounded-full hover:scale-110 transition-transform"
                     >
                         Start Game

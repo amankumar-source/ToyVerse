@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+
 import { useStore } from '../store/useStore';
 import SmartImage from './ui/SmartImage';
 import TiltCard from './ui/TiltCard';
@@ -27,7 +27,7 @@ export default function FeaturedToys() {
     const addToCart = useStore(state => state.addToCart);
 
     return (
-        <section id="featured" className="py-24 bg-gradient-to-r from-indigo-900 via-purple-800 to-pink-700 relative overflow-hidden">
+        <section id="featured" className="py-24 bg-gradient-to-r from-indigo-900 via-purple-800 to-pink-700 relative overflow-hidden z-10">
             <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-blue-900 to-transparent" />
 
             <div className="container mx-auto px-4 relative z-10">

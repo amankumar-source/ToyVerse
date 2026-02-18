@@ -1,276 +1,196 @@
-import React, { useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import {
-    Stage,
-    PresentationControls,
-    ContactShadows,
-    Environment,
-    PerspectiveCamera,
-    Float,
-    Stars,
-    Sparkles
-} from '@react-three/drei';
-import { motion, useInView } from 'framer-motion';
-import * as THREE from 'three';
+import React, { useRef, useState, useEffect, Suspense } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Float, Stars, ContactShadows, Environment } from "@react-three/drei";
+import * as THREE from "three";
 
-// --- Materials ---
-const hullMaterial = new THREE.MeshPhysicalMaterial({
-    color: '#e0e0e0',
-    metalness: 0.6,
-    roughness: 0.2,
-    clearcoat: 1.0,
-    clearcoatRoughness: 0.1,
-});
+// --- STYLES ---
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap');
+  .font-tech { font-family: 'Share Tech Mono', monospace; }
+  .font-display { font-family: 'Bebas Neue', cursive; }
+  
+  .scanlines {
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px);
+  }
+  .grid-bg {
+    background-image: linear-gradient(rgba(0,200,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,200,255,0.05) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .radial-vignette {
+    background: radial-gradient(ellipse at center, transparent 40%, #050510 100%);
+  }
+`;
 
-const finMaterial = new THREE.MeshStandardMaterial({
-    color: '#ff0000', // Red fins
-    metalness: 0.4,
-    roughness: 0.4,
-});
+// ---------------- ROCKET ----------------
+function Rocket({ engineOn, launched }) {
+  const ref = useRef();
 
-const windowMaterial = new THREE.MeshPhysicalMaterial({
-    color: '#87ceeb',
-    metalness: 0.1,
-    roughness: 0.1,
-    transmission: 0.5, // Glass-like
-    thickness: 0.5,
-});
+  useFrame((state, delta) => {
+    if (!ref.current) return;
 
-const engineMaterial = new THREE.MeshStandardMaterial({
-    color: '#333333',
-    metalness: 0.8,
-    roughness: 0.5,
-});
+    if (launched) {
+      ref.current.position.y += 8 * delta;
+      ref.current.rotation.y += 2 * delta;
+      ref.current.rotation.x += 0.5 * delta;
+    } else if (engineOn) {
+      // Shake effect
+      ref.current.position.x = (Math.random() - 0.5) * 0.05;
+      ref.current.position.z = (Math.random() - 0.5) * 0.05;
+    } else {
+      // Idle float animation
+      ref.current.position.x = 0;
+      ref.current.position.z = 0;
+      ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, 0, 0.1);
+      ref.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
+    }
+  });
 
-const flameMaterial = new THREE.MeshBasicMaterial({
-    color: '#ffaa00',
-    toneMapped: false,
-});
+  return (
+    <group ref={ref}>
+      {/* Body */}
+      <mesh castShadow>
+        <cylinderGeometry args={[0.6, 0.8, 3, 32]} />
+        <meshStandardMaterial color="#e0e0e0" metalness={0.8} roughness={0.2} />
+      </mesh>
 
-// --- Rocket Model Component ---
-const RocketModel = ({ isEngineOn, isLaunched, onHover }) => {
-    const group = useRef();
-    const exhaustRef = useRef();
+      {/* Nose */}
+      <mesh position={[0, 2, 0]}>
+        <coneGeometry args={[0.6, 1.2, 32]} />
+        <meshStandardMaterial color="#ef4444" metalness={0.6} roughness={0.3} />
+      </mesh>
 
-    // Animation Loop
-    useFrame((state, delta) => {
-        const t = state.clock.getElapsedTime();
+      {/* Fins */}
+      {[0, Math.PI / 2, Math.PI, -Math.PI / 2].map((r, i) => (
+        <mesh key={i} position={[0, -1, 0]} rotation={[0, r, 0]}>
+          <group position={[0.7, 0, 0]}>
+            <boxGeometry args={[0.8, 1.5, 0.1]} />
+            <meshStandardMaterial color="#ef4444" metalness={0.6} />
+          </group>
+        </mesh>
+      ))}
 
-        if (isLaunched && group.current) {
-            // Launch: Accelerate upwards
-            group.current.position.y += 10 * delta;
-            // Add a bit of rotation during launch
-            group.current.rotation.y += 2 * delta;
-        } else if (isEngineOn && group.current) {
-            // Engine Start: Severe shake / Vibration
-            group.current.position.x = (Math.random() - 0.5) * 0.1;
-            group.current.position.z = (Math.random() - 0.5) * 0.1;
-            group.current.position.y = (Math.random() - 0.5) * 0.05; // Minor vertical jitter
-        } else if (group.current) {
-            // Idle: Gentle float (handled by <Float> wrapper mostly, but we can add subtle internal movement if needed)
-            group.current.rotation.z = Math.sin(t * 0.5) * 0.05;
-        }
+      {/* Engine */}
+      <mesh position={[0, -1.8, 0]}>
+        <cylinderGeometry args={[0.5, 0.7, 0.6, 32]} />
+        <meshStandardMaterial color="#333" />
+      </mesh>
 
-        // Exhaust flicker
-        if (exhaustRef.current && (isEngineOn || isLaunched)) {
-            exhaustRef.current.scale.y = 1 + Math.random() * 0.5;
-            exhaustRef.current.position.y = -2.5 - Math.random() * 0.2;
-        }
-    });
-
-    return (
-        <group
-            ref={group}
-            onPointerOver={() => onHover(true)}
-            onPointerOut={() => onHover(false)}
-        >
-            {/* --- BODY --- */}
-            {/* Main Hull */}
-            <mesh position={[0, 0, 0]} castShadow>
-                <cylinderGeometry args={[0.7, 0.9, 4, 32]} />
-                <primitive object={hullMaterial} />
-            </mesh>
-
-            {/* Nose Cone */}
-            <mesh position={[0, 2.75, 0]} castShadow>
-                <coneGeometry args={[0.7, 1.5, 32]} />
-                <primitive object={finMaterial} />
-            </mesh>
-
-            {/* Window */}
-            <mesh position={[0, 1, 0.6]} rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[0.3, 0.05, 16, 32]} />
-                <meshStandardMaterial color="#888" />
-            </mesh>
-            <mesh position={[0, 1, 0.55]} rotation={[Math.PI / 2, 0, 0]}>
-                <circleGeometry args={[0.3, 32]} />
-                <primitive object={windowMaterial} />
-            </mesh>
-
-            {/* --- FINS --- */}
-            {[0, Math.PI / 2, Math.PI, -Math.PI / 2].map((rotation, i) => (
-                <group key={i} rotation={[0, rotation, 0]}>
-                    <mesh position={[0.8, -1.5, 0]} castShadow>
-                        <boxGeometry args={[0.8, 1.5, 0.1]} />
-                        <primitive object={finMaterial} />
-                    </mesh>
-                    {/* Angle the top of the fin in for style (optional) - simple box is fine for now, or use custom geometry */}
-                </group>
-            ))}
-
-            {/* --- ENGINE --- */}
-            <mesh position={[0, -2.2, 0]} castShadow>
-                <cylinderGeometry args={[0.6, 0.8, 0.5, 32]} />
-                <primitive object={engineMaterial} />
-            </mesh>
-            <mesh position={[0, -2.5, 0]}>
-                <cylinderGeometry args={[0.5, 0.7, 0.4, 32]} />
-                <meshStandardMaterial color="#222" />
-            </mesh>
-
-            {/* --- FLAME (Visible only when engine on) --- */}
-            {(isEngineOn || isLaunched) && (
-                <mesh ref={exhaustRef} position={[0, -3.5, 0]} rotation={[Math.PI, 0, 0]}>
-                    <coneGeometry args={[0.4, 2, 16]} />
-                    <primitive object={flameMaterial} />
-                </mesh>
-            )}
-        </group>
-    );
-};
-
-// --- Particles / Stars Effect ---
-// Reuse Sparkles or create simple custom particles for exhaust if needed
-const ExhaustParticles = ({ isEngineOn, isLaunched }) => {
-    if (!isEngineOn && !isLaunched) return null;
-
-    return (
-        <group position={[0, -3, 0]}>
-            <Sparkles
-                count={50}
-                scale={4}
-                size={6}
-                speed={5}
-                opacity={0.8}
-                color="#ff8800"
-                noise={1}
-            />
-        </group>
-    )
+      {/* Flame */}
+      {(engineOn || launched) && (
+        <mesh position={[0, -3, 0]} rotation={[Math.PI, 0, 0]}>
+          <coneGeometry args={[0.5, 2.5, 16]} />
+          <meshBasicMaterial color="#ffaa00" transparent opacity={0.8} />
+        </mesh>
+      )}
+    </group>
+  );
 }
 
+// ---------------- MAIN ----------------
+export default function RocketShowcase() {
+  const [engineOn, setEngineOn] = useState(false);
+  const [launched, setLaunched] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-const RocketShowcase = () => {
-    const [isEngineOn, setIsEngineOn] = useState(false);
-    const [isLaunched, setIsLaunched] = useState(false);
-    const [, setIsHovered] = useState(false);
-    const containerRef = useRef(null);
-    const isInView = useInView(containerRef, { once: false, amount: 0.1 });
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
-    const handleAction = () => {
-        if (!isEngineOn && !isLaunched) {
-            // Start Engine
-            setIsEngineOn(true);
-        } else if (isEngineOn && !isLaunched) {
-            // Launch
-            setIsLaunched(true);
-            setTimeout(() => {
-                // Reset after some time or just let it fly away?
-                // Let's reset for replayability after 5 seconds
-                setTimeout(() => {
-                    setIsLaunched(false);
-                    setIsEngineOn(false);
-                }, 5000);
-            }, 500);
-        }
-    };
+  const handleClick = () => {
+    if (!engineOn) {
+      setEngineOn(true);
+    } else if (!launched) {
+      setLaunched(true);
+      setTimeout(() => {
+        setEngineOn(false);
+        setLaunched(false);
+      }, 5000);
+    }
+  };
 
-    return (
-        <div ref={containerRef} className="w-full h-screen bg-black relative overflow-hidden flex flex-col items-center justify-center">
-            {/* Background Gradient */}
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-900 to-black z-0" />
+  const status = launched ? "IN FLIGHT" : engineOn ? "IGNITION" : "READY";
 
-            {/* 3D Scene */}
-            <div className="w-full h-full absolute inset-0 z-10">
-                <Canvas
-                    shadows
-                    dpr={[1, 1.5]}
-                    camera={{ position: [0, 2, 10], fov: 45 }}
-                    frameloop={isInView ? "always" : "never"}
-                >
-                    <fog attach="fog" args={['#050505', 5, 20]} />
+  return (
+    <>
+      <style>{styles}</style>
+      {/* Supports dvh for mobile browsers */}
+      <div className="w-full h-[100dvh] bg-[#050510] relative overflow-hidden flex flex-col items-center justify-center">
 
-                    {/* Lighting */}
-                    <ambientLight intensity={0.5} />
-                    <spotLight position={[10, 10, 10]} angle={0.5} penumbra={1} intensity={20} castShadow shadow-bias={-0.0001} />
-                    <pointLight position={[-10, 5, -10]} intensity={5} color="#00f3ff" />
-                    <pointLight position={[10, 5, 5]} intensity={5} color="#ff0000" />
+        {/* Background Layers */}
+        <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
+        <div className="absolute inset-0 scanlines pointer-events-none z-30 opacity-20" />
+        <div className="absolute inset-0 radial-vignette pointer-events-none z-10" />
 
-                    <Environment preset="night" blur={0.8} background={false} />
-                    <Stars radius={100} depth={50} count={2000} factor={4} saturation={0} fade speed={isLaunched ? 10 : 1} />
+        {/* 3D Scene */}
+        <div className="absolute inset-0 z-10">
+          {/* Dynamic Camera Position based on Screen Size */}
+          <Canvas shadows gl={{ powerPreference: "high-performance" }} camera={{ position: [0, isMobile ? 1 : 2, isMobile ? 14 : 9], fov: 45 }}>
+            <color attach="background" args={["#050510"]} />
 
-                    <PerspectiveCamera makeDefault position={[0, 2, 12]} fov={50} />
+            <Suspense fallback={null}>
+              <ambientLight intensity={0.4} />
+              <spotLight position={[10, 10, 10]} angle={0.5} penumbra={1} intensity={20} castShadow />
+              <pointLight position={[-10, -5, -10]} intensity={5} color="#00f3ff" />
 
-                    <Float speed={isEngineOn ? 20 : 2} rotationIntensity={isEngineOn ? 1 : 0.2} floatIntensity={isEngineOn ? 2 : 0.5}>
-                        <PresentationControls
-                            global
-                            zoom={0.8}
-                            rotation={[0, -Math.PI / 4, 0]}
-                            polar={[-Math.PI / 6, Math.PI / 6]}
-                            azimuth={[-Math.PI / 4, Math.PI / 4]}
-                            config={{ mass: 2, tension: 400 }}
-                            enabled={!isLaunched} // Disable controls during launch
-                        >
-                            <Stage environment={null} intensity={0.5} contactShadow={false} shadowBias={-0.001}>
-                                <RocketModel isEngineOn={isEngineOn} isLaunched={isLaunched} onHover={setIsHovered} />
-                            </Stage>
-                        </PresentationControls>
-                    </Float>
+              <Stars radius={100} depth={50} count={3000} factor={4} fade speed={launched ? 2 : 0.5} />
+              <Environment preset="city" />
 
-                    <ExhaustParticles isEngineOn={isEngineOn} isLaunched={isLaunched} />
+              <Float speed={engineOn ? 10 : 2} rotationIntensity={0.5} floatIntensity={0.5}>
+                <Rocket engineOn={engineOn} launched={launched} />
+              </Float>
 
-                    {!isLaunched && <ContactShadows resolution={512} scale={50} blur={2} opacity={0.5} far={10} color="#000" />}
-                </Canvas>
-            </div>
-
-            {/* UI Overlay */}
-            <div className={`relative z-20 pointer-events-none flex flex-col items-center text-center transition-opacity duration-1000 ${isLaunched ? 'opacity-0' : 'opacity-100'}`}>
-                <motion.h2
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500 font-display tracking-tighter"
-                >
-                    GALACTIC X
-                </motion.h2>
-                <p className="text-gray-400 text-xl mt-4 max-w-lg">
-                    Interstellar Transport Vehicle. Ready for lift-off.
-                </p>
-
-                <div className="mt-12 pointer-events-auto">
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleAction}
-                        className={`px-12 py-4 rounded-full font-bold text-xl transition-all duration-300 border-2 ${isEngineOn
-                            ? 'bg-orange-600 border-orange-500 text-white shadow-[0_0_30px_rgba(255,165,0,0.5)] animate-pulse'
-                            : 'bg-transparent border-white/20 text-white hover:bg-white hover:text-black hover:border-white'
-                            }`}
-                    >
-                        {!isEngineOn ? 'START ENGINE' : 'LAUNCH MISSION'}
-                    </motion.button>
-                </div>
-            </div>
-
-            {/* Dashboard / HUD Elements */}
-            <div className="absolute bottom-10 left-10 z-20 hidden md:block">
-                <div className="text-white/50 text-sm font-mono">
-                    <p>STATUS: {isLaunched ? 'IN FLIGHT' : isEngineOn ? 'IGNITION SEQUENCED' : 'SYSTEMS READY'}</p>
-                    <p>FUEL: 100%</p>
-                    <p>DESTINATION: MARS</p>
-                </div>
-            </div>
+              <ContactShadows position={[0, -3, 0]} opacity={0.5} scale={20} blur={2.5} far={4} color="#000" />
+            </Suspense>
+          </Canvas>
         </div>
-    );
-};
 
-export default RocketShowcase;
+        {/* UI Overlay */}
+        <div className="absolute inset-0 z-20 flex flex-col justify-between py-8 md:py-12 pointer-events-none px-4">
+          {/* Top HUD */}
+          <div className={`text-center transition-opacity duration-1000 ${launched ? 'opacity-0' : 'opacity-100'}`}>
+            <h1 className="text-6xl md:text-9xl font-display text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 tracking-wider drop-shadow-lg leading-tight">
+              GALACTIC X
+            </h1>
+            <p className="font-tech text-toy-neonBlue tracking-[0.2em] md:tracking-[0.3em] text-xs md:text-base mt-2">
+              INTERSTELLAR TRANSPORT VEHICLE
+            </p>
+          </div>
+
+          {/* Bottom Controls */}
+          <div className={`flex flex-col items-center gap-6 transition-opacity duration-1000 ${launched ? 'opacity-0' : 'opacity-100'} mb-16 md:mb-0`}>
+            <div className="pointer-events-auto">
+              <button
+                onClick={handleClick}
+                className={`px-8 py-3 md:px-12 md:py-4 rounded-full font-display text-xl md:text-2xl tracking-wider transition-all duration-300 border-2
+                            ${engineOn
+                    ? "bg-orange-600 border-orange-400 text-white shadow-[0_0_50px_rgba(255,100,0,0.6)] scale-110 animate-pulse"
+                    : "bg-transparent border-white/20 text-white hover:bg-white/10 hover:border-white/50"
+                  }`}
+              >
+                {engineOn ? "LAUNCH MISSION" : "START ENGINE"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* HUD Data Overlay - Bottom Left */}
+        {/* Adjusted for mobile: stacked vertically, smaller text, positioned to not overlap button */}
+        <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8 z-20 font-tech text-[10px] md:text-sm text-toy-neonBlue/80 space-y-1 border-l-2 border-toy-neonBlue/30 pl-2 md:pl-4 opacity-70 md:opacity-100">
+          <div className="flex gap-2 md:gap-4"><span className="text-gray-500 w-12 md:w-16">STATUS</span> <span className={engineOn ? "text-orange-500 animate-pulse" : "text-green-400"}>{status}</span></div>
+          <div className="flex gap-2 md:gap-4"><span className="text-gray-500 w-12 md:w-16">FUEL</span> 100%</div>
+          <div className="flex gap-2 md:gap-4"><span className="text-gray-500 w-12 md:w-16">DEST</span> MARS</div>
+        </div>
+
+        {/* HUD Data Overlay - Bottom Right */}
+        <div className="absolute bottom-4 right-4 md:bottom-8 md:right-8 z-20 font-tech text-[10px] md:text-xs text-right text-toy-neonBlue/60 opacity-70 md:opacity-100">
+          <div>SYS.V.2.0.4</div>
+          <div>LOW ORBIT</div>
+        </div>
+
+      </div>
+    </>
+  );
+}

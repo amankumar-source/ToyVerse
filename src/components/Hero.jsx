@@ -4,11 +4,12 @@ import { useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { useInView } from 'framer-motion';
 
+// eslint-disable-next-line no-unused-vars
 function Toy({ position, color, geometry: Geometry, scale = 1, rotation = [0, 0, 0] }) {
     const mesh = useRef();
     const [hovered, setHover] = useState(false);
 
-    useFrame((state) => {
+    useFrame(() => {
         if (!hovered && mesh.current) {
             mesh.current.rotation.x += 0.005;
             mesh.current.rotation.y += 0.005;
@@ -79,6 +80,33 @@ export default function Hero() {
     // Only detect if ANY part of the hero is in view
     const isInView = useInView(containerRef, { once: false, amount: 0.1 });
 
+    const [backgroundShapes] = useState(() =>
+        [...Array(10)].map((_, i) => ({
+            id: i,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            width: `${Math.random() * 300 + 50}px`,
+            height: `${Math.random() * 300 + 50}px`,
+            background: `radial-gradient(circle, ${['#ff0055', '#00f3ff', '#ffe600', '#bc13fe'][Math.floor(Math.random() * 4)]} 0%, transparent 70%)`,
+            animationDuration: `${Math.random() * 10 + 10}s`,
+            animationDelay: `${Math.random() * 5}s`
+        }))
+    );
+
+    const [floatingParticles] = useState(() =>
+        [...Array(25)].map((_, i) => ({
+            id: i,
+            speed: 0.8 + Math.random(),
+            position: [
+                (Math.random() - 0.5) * 20,
+                (Math.random() - 0.5) * 15,
+                (Math.random() - 0.5) * 10 - 5
+            ],
+            geometryArgs: [0.08 + Math.random() * 0.2, 16, 16],
+            color: ["#ff0080", "#00ffff", "#ffdd00", "#9d00ff", "#00ff66"][Math.floor(Math.random() * 5)]
+        }))
+    );
+
     return (
         <div ref={containerRef} id="hero" className="h-screen w-full relative bg-sky-300 overflow-hidden">
             {/* Background Gradient - Fun & Vibrant */}
@@ -86,18 +114,18 @@ export default function Hero() {
 
             {/* Floating Shapes Background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-30">
-                {[...Array(10)].map((_, i) => (
+                {backgroundShapes.map((shape) => (
                     <div
-                        key={i}
+                        key={shape.id}
                         className="absolute rounded-full mix-blend-overlay animate-float"
                         style={{
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
-                            width: `${Math.random() * 300 + 50}px`,
-                            height: `${Math.random() * 300 + 50}px`,
-                            background: `radial-gradient(circle, ${['#ff0055', '#00f3ff', '#ffe600', '#bc13fe'][Math.floor(Math.random() * 4)]} 0%, transparent 70%)`,
-                            animationDuration: `${Math.random() * 10 + 10}s`,
-                            animationDelay: `${Math.random() * 5}s`
+                            left: shape.left,
+                            top: shape.top,
+                            width: shape.width,
+                            height: shape.height,
+                            background: shape.background,
+                            animationDuration: shape.animationDuration,
+                            animationDelay: shape.animationDelay
                         }}
                     />
                 ))}
@@ -123,18 +151,14 @@ export default function Hero() {
                     <ToyIcosahedron position={[0, 3, -4]} color="#00ff66" scale={0.8} /> {/* Lime Green */}
 
                     {/* Floating Particles - Reduced Count */}
-                    {[...Array(25)].map((_, i) => (
-                        <Float key={i} speed={0.8 + Math.random()} floatIntensity={2} position={[
-                            (Math.random() - 0.5) * 20,
-                            (Math.random() - 0.5) * 15,
-                            (Math.random() - 0.5) * 10 - 5
-                        ]}>
+                    {floatingParticles.map((particle) => (
+                        <Float key={particle.id} speed={particle.speed} floatIntensity={2} position={particle.position}>
                             <mesh>
-                                <sphereGeometry args={[0.08 + Math.random() * 0.2, 16, 16]} />
+                                <sphereGeometry args={particle.geometryArgs} />
                                 <meshStandardMaterial
-                                    color={["#ff0080", "#00ffff", "#ffdd00", "#9d00ff", "#00ff66"][Math.floor(Math.random() * 5)]}
+                                    color={particle.color}
                                     emissiveIntensity={0.5}
-                                    emissive={["#ff0080", "#00ffff", "#ffdd00", "#9d00ff", "#00ff66"][Math.floor(Math.random() * 5)]}
+                                    emissive={particle.color}
                                     roughness={0.1}
                                 />
                             </mesh>

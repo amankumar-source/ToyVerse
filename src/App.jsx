@@ -25,9 +25,10 @@ const LoadingSpinner = () => (
 function App() {
   useEffect(() => {
     const lenis = new Lenis({
-      lerp: 0.1,
-      duration: 1.5,
-      smoothWheel: true
+      lerp: 0.08,
+      duration: 2.0,
+      smoothWheel: true,
+      wheelMultiplier: 1.2,
     });
 
     function raf(time) {

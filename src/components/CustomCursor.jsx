@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
-import { useStore } from '../store/useStore';
+
 
 export default function CustomCursor() {
     const cursorRef = useRef(null); // Inner cursor
@@ -15,10 +15,13 @@ export default function CustomCursor() {
     const ySet = useRef(null);
 
     const particles = useRef([]);
-    const [sectionTheme, setSectionTheme] = useState('default'); // hero, products, games
+
 
     // Track mouse position separately to decouple from render loop
     const mouse = useRef({ x: 0, y: 0 });
+
+    // Use a ref for theme to avoid re-binding listeners
+    const themeRef = useRef('default');
 
     useEffect(() => {
         // Initial setup
@@ -50,7 +53,7 @@ export default function CustomCursor() {
             if (Math.abs(vel.current.x) + Math.abs(vel.current.y) > 5) {
                 // Limit particle spawning rate
                 if (Math.random() > 0.5) {
-                    createParticles(e.clientX, e.clientY, sectionTheme);
+                    createParticles(e.clientX, e.clientY, themeRef.current);
                 }
             }
         };
@@ -126,20 +129,6 @@ export default function CustomCursor() {
         window.addEventListener('mousemove', onMouseMove, { passive: true });
         loop();
 
-        // Section intersection observer to change themes
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    if (entry.target.id === 'hero') setSectionTheme('hero');
-                    else if (entry.target.id === 'products') setSectionTheme('products');
-                    else if (entry.target.id === 'games') setSectionTheme('games');
-                    else setSectionTheme('default');
-                }
-            });
-        }, { threshold: 0.1 }); // Lower threshold for better responsiveness
-
-        document.querySelectorAll('section').forEach(sec => observer.observe(sec));
-
         // Hover listeners
         const handleMouseOver = (e) => {
             const target = e.target;
@@ -175,9 +164,26 @@ export default function CustomCursor() {
             window.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseover', handleMouseOver);
             cancelAnimationFrame(animationFrameId);
-            observer.disconnect();
         };
-    }, [sectionTheme]);
+    }, []);
+
+    // Separate effect for theme observation
+    useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    if (entry.target.id === 'hero') themeRef.current = 'hero';
+                    else if (entry.target.id === 'products') themeRef.current = 'products';
+                    else if (entry.target.id === 'games') themeRef.current = 'games';
+                    else themeRef.current = 'default';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('section').forEach(sec => observer.observe(sec));
+
+        return () => observer.disconnect();
+    }, []);
 
     return (
         <>

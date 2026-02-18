@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useStore } from '../store/useStore';
-import { gsap } from 'gsap';
+
 import SmartImage from './ui/SmartImage';
 import TiltCard from './ui/TiltCard';
 import MagneticButton from './ui/MagneticButton';
@@ -21,7 +21,7 @@ const categories = ['All', 'Vehicles', 'Action', 'Building', 'RC', 'Education'];
 
 const ProductCard = ({ product }) => {
     const addToCart = useStore((state) => state.addToCart);
-    const cardRef = useRef(null);
+
 
     return (
         <motion.div
@@ -53,7 +53,7 @@ const ProductCard = ({ product }) => {
                     <div className="flex justify-between items-center mt-4">
                         <span className="text-sm text-gray-400 font-medium uppercase tracking-wider">{product.category}</span>
                         <MagneticButton
-                            onClick={() => addToCart({ ...product, id: Math.random() })}
+                            onClick={() => addToCart(product)}
                             className="px-6 py-2 bg-toy-red text-white font-bold rounded-full shadow-lg"
                         >
                             Add +
@@ -70,7 +70,7 @@ export default function ProductShowcase() {
     const filteredProducts = filter === 'All' ? products : products.filter(p => p.category === filter);
 
     return (
-        <section id="products" className="py-20 bg-gradient-to-b from-pink-100 to-purple-100 relative">
+        <section id="products" className="py-20 bg-gradient-to-b from-pink-100 to-purple-100 relative z-20">
             <div className="container mx-auto px-4">
                 <div className="text-center mb-16">
                     <h2 className="text-5xl md:text-7xl font-display text-toy-purple mb-4 animate-pulse">

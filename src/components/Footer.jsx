@@ -1,29 +1,41 @@
+import { useState } from 'react';
 import { Github, Twitter, Instagram } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Footer() {
+    const [floatingElements] = useState(() =>
+        [...Array(10)].map((_, i) => ({
+            id: i,
+            width: Math.random() * 100 + 50,
+            height: Math.random() * 100 + 50,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            duration: Math.random() * 5 + 5
+        }))
+    );
+
     return (
         <footer className="bg-indigo-950 text-white pt-20 pb-10 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-toy-light/10 to-transparent pointer-events-none"></div>
 
             {/* Floating Elements Background */}
             <div className="absolute inset-0 overflow-hidden opacity-10 pointer-events-none">
-                {[...Array(10)].map((_, i) => (
+                {floatingElements.map((el) => (
                     <motion.div
-                        key={i}
+                        key={el.id}
                         className="absolute bg-white rounded-full"
                         style={{
-                            width: Math.random() * 100 + 50,
-                            height: Math.random() * 100 + 50,
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
+                            width: el.width,
+                            height: el.height,
+                            left: el.left,
+                            top: el.top,
                         }}
                         animate={{
                             y: [0, -50, 0],
                             opacity: [0.1, 0.3, 0.1],
                         }}
                         transition={{
-                            duration: Math.random() * 5 + 5,
+                            duration: el.duration,
                             repeat: Infinity,
                             ease: "easeInOut"
                         }}

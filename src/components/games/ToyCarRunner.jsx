@@ -166,6 +166,7 @@ export default function ToyCarRunner() {
 
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
             cancelAnimationFrame(state.current.animId);
         };
     }, [gameStarted, gameOver, isInView]); // Dependency on isInView ensures we restart loop when back in view
@@ -177,7 +178,22 @@ export default function ToyCarRunner() {
                     <h3 className="text-4xl text-toy-neonBlue font-display mb-4">Neon Racer</h3>
                     <p className="text-white mb-6">Use Arrow Keys to Dodge & Collect Stars</p>
                     <button
-                        onClick={() => { setGameStarted(true); setGameOver(false); setScore(0); }}
+                        onClick={() => {
+                            state.current = {
+                                carX: 0,
+                                carLane: 1,
+                                obstacles: [],
+                                stars: [],
+                                speed: 5,
+                                lastObstacleTime: 0,
+                                lastStarTime: 0,
+                                animId: null,
+                                lastFrameTime: 0
+                            };
+                            setGameStarted(true);
+                            setGameOver(false);
+                            setScore(0);
+                        }}
                         className="px-8 py-3 bg-toy-red text-white font-bold rounded-full hover:scale-110 transition-transform"
                     >
                         Start Engine
@@ -188,7 +204,21 @@ export default function ToyCarRunner() {
                     <h3 className="text-4xl text-white font-display mb-4">CRASH!</h3>
                     <p className="text-2xl text-toy-yellow mb-6">Score: {score}</p>
                     <button
-                        onClick={() => { setGameOver(false); setScore(0); }}
+                        onClick={() => {
+                            state.current = {
+                                carX: 0,
+                                carLane: 1,
+                                obstacles: [],
+                                stars: [],
+                                speed: 5,
+                                lastObstacleTime: 0,
+                                lastStarTime: 0,
+                                animId: null,
+                                lastFrameTime: 0
+                            };
+                            setGameOver(false);
+                            setScore(0);
+                        }}
                         className="px-8 py-3 bg-white text-toy-red font-bold rounded-full hover:scale-110 transition-transform"
                     >
                         Try Again
