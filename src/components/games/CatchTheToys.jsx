@@ -1,7 +1,11 @@
 import { useRef, useEffect, useState } from 'react';
+import { useInView } from 'framer-motion';
 
 export default function CatchTheToys() {
     const canvasRef = useRef(null);
+    const containerRef = useRef(null);
+    const isInView = useInView(containerRef, { once: false, amount: 0.1 });
+
     const [score, setScore] = useState(0);
     const [playing, setPlaying] = useState(false);
     const [timeLeft, setTimeLeft] = useState(30);
@@ -19,14 +23,23 @@ export default function CatchTheToys() {
     useEffect(() => {
         if (!playing) return;
 
+        // Pause if out of view
+        if (!isInView) {
+            cancelAnimationFrame(state.current.animId);
+            return;
+        }
+
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
 
-        // Reset
-        state.current.toys = [];
+        // Reset only on initial start, not resume
+        // But for simplicity in this game, if we scroll away, we might want to just pause the loop.
+        // We'll rely on the fact that state.current.toys persists.
 
-        setTimeLeft(30);
+        // Timer logic needs to be paused too ideally, but for now we'll just let the timer run (it's a separated interval)
+        // or we can just pause rendering. Creating a "Pause" state is better but complex.
+        // Simple fix: Stop rendering. The timer will keep ticking which is fine (game over if you ignore it).
 
         const timer = setInterval(() => {
             setTimeLeft(PREV => {
@@ -133,10 +146,10 @@ export default function CatchTheToys() {
             window.removeEventListener('mouseup', handleMouseUp);
             cancelAnimationFrame(state.current.animId);
         };
-    }, [playing]);
+    }, [playing, isInView]);
 
     return (
-        <div className="relative w-full h-[600px] bg-gray-900 rounded-xl overflow-hidden border-2 border-toy-neonBlue shadow-[0_0_30px_rgba(0,243,255,0.3)]">
+        <div ref={containerRef} className="relative w-full h-[600px] bg-gray-900 rounded-xl overflow-hidden border-2 border-toy-neonBlue shadow-[0_0_30px_rgba(0,243,255,0.3)]">
             {!playing ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20">
                     <h3 className="text-4xl text-toy-yellow font-display mb-4">Toy Catcher</h3>

@@ -2,13 +2,14 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, PerspectiveCamera, Environment, ContactShadows } from '@react-three/drei';
 import { useRef, useState } from 'react';
 import { gsap } from 'gsap';
+import { useInView } from 'framer-motion';
 
 function Toy({ position, color, geometry: Geometry, scale = 1, rotation = [0, 0, 0] }) {
     const mesh = useRef();
     const [hovered, setHover] = useState(false);
 
     useFrame((state) => {
-        if (!hovered) {
+        if (!hovered && mesh.current) {
             mesh.current.rotation.x += 0.005;
             mesh.current.rotation.y += 0.005;
         }
@@ -74,14 +75,18 @@ const ToyIcosahedron = (props) => (
 );
 
 export default function Hero() {
+    const containerRef = useRef(null);
+    // Only detect if ANY part of the hero is in view
+    const isInView = useInView(containerRef, { once: false, amount: 0.1 });
+
     return (
-        <div className="h-screen w-full relative bg-sky-300 overflow-hidden">
+        <div ref={containerRef} id="hero" className="h-screen w-full relative bg-sky-300 overflow-hidden">
             {/* Background Gradient - Fun & Vibrant */}
             <div className="absolute inset-0 bg-gradient-to-b from-sky-400 via-purple-300 to-pink-300 opacity-100 z-0" />
 
             {/* Floating Shapes Background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-30">
-                {[...Array(20)].map((_, i) => (
+                {[...Array(10)].map((_, i) => (
                     <div
                         key={i}
                         className="absolute rounded-full mix-blend-overlay animate-float"
@@ -98,7 +103,12 @@ export default function Hero() {
                 ))}
             </div>
 
-            <Canvas shadows dpr={[1, 2]} className="z-10 relative">
+            <Canvas
+                shadows
+                dpr={[1, 1.5]} // Cap DPR for performance
+                className="z-10 relative"
+                frameloop={isInView ? "always" : "never"} // Pause when out of view
+            >
                 <PerspectiveCamera makeDefault position={[0, 0, 12]} fov={50} />
                 <ambientLight intensity={0.8} />
                 <spotLight position={[10, 10, 10]} angle={0.25} penumbra={1} intensity={25} castShadow />
@@ -112,8 +122,8 @@ export default function Hero() {
                     <ToyTorus position={[3, -2, 2]} color="#9d00ff" scale={1.2} /> {/* Purple */}
                     <ToyIcosahedron position={[0, 3, -4]} color="#00ff66" scale={0.8} /> {/* Lime Green */}
 
-                    {/* Floating Particles - More Colorful */}
-                    {[...Array(50)].map((_, i) => (
+                    {/* Floating Particles - Reduced Count */}
+                    {[...Array(25)].map((_, i) => (
                         <Float key={i} speed={0.8 + Math.random()} floatIntensity={2} position={[
                             (Math.random() - 0.5) * 20,
                             (Math.random() - 0.5) * 15,
@@ -132,8 +142,8 @@ export default function Hero() {
                     ))}
                 </group>
 
-                <ContactShadows resolution={1024} scale={50} blur={2.5} opacity={0.3} far={20} color="#000" />
-                <Environment preset="park" /> {/* Brighter Environment */}
+                <ContactShadows resolution={512} scale={50} blur={2.5} opacity={0.3} far={20} color="#000" />
+                <Environment preset="park" background={false} /> {/* Brighter Environment */}
             </Canvas>
 
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">

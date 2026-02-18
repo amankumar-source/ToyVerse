@@ -10,7 +10,7 @@ import {
     Stars,
     Sparkles
 } from '@react-three/drei';
-import { motion } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import * as THREE from 'three';
 
 // --- Materials ---
@@ -56,17 +56,17 @@ const RocketModel = ({ isEngineOn, isLaunched, onHover }) => {
     useFrame((state, delta) => {
         const t = state.clock.getElapsedTime();
 
-        if (isLaunched) {
+        if (isLaunched && group.current) {
             // Launch: Accelerate upwards
             group.current.position.y += 10 * delta;
             // Add a bit of rotation during launch
             group.current.rotation.y += 2 * delta;
-        } else if (isEngineOn) {
+        } else if (isEngineOn && group.current) {
             // Engine Start: Severe shake / Vibration
             group.current.position.x = (Math.random() - 0.5) * 0.1;
             group.current.position.z = (Math.random() - 0.5) * 0.1;
             group.current.position.y = (Math.random() - 0.5) * 0.05; // Minor vertical jitter
-        } else {
+        } else if (group.current) {
             // Idle: Gentle float (handled by <Float> wrapper mostly, but we can add subtle internal movement if needed)
             group.current.rotation.z = Math.sin(t * 0.5) * 0.05;
         }
@@ -147,7 +147,7 @@ const ExhaustParticles = ({ isEngineOn, isLaunched }) => {
     return (
         <group position={[0, -3, 0]}>
             <Sparkles
-                count={100}
+                count={50}
                 scale={4}
                 size={6}
                 speed={5}
@@ -164,6 +164,8 @@ const RocketShowcase = () => {
     const [isEngineOn, setIsEngineOn] = useState(false);
     const [isLaunched, setIsLaunched] = useState(false);
     const [, setIsHovered] = useState(false);
+    const containerRef = useRef(null);
+    const isInView = useInView(containerRef, { once: false, amount: 0.1 });
 
     const handleAction = () => {
         if (!isEngineOn && !isLaunched) {
@@ -184,13 +186,18 @@ const RocketShowcase = () => {
     };
 
     return (
-        <div className="w-full h-screen bg-black relative overflow-hidden flex flex-col items-center justify-center">
+        <div ref={containerRef} className="w-full h-screen bg-black relative overflow-hidden flex flex-col items-center justify-center">
             {/* Background Gradient */}
             <div className="absolute inset-0 bg-gradient-to-b from-slate-900 to-black z-0" />
 
             {/* 3D Scene */}
             <div className="w-full h-full absolute inset-0 z-10">
-                <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 2, 10], fov: 45 }}>
+                <Canvas
+                    shadows
+                    dpr={[1, 1.5]}
+                    camera={{ position: [0, 2, 10], fov: 45 }}
+                    frameloop={isInView ? "always" : "never"}
+                >
                     <fog attach="fog" args={['#050505', 5, 20]} />
 
                     {/* Lighting */}
@@ -199,8 +206,8 @@ const RocketShowcase = () => {
                     <pointLight position={[-10, 5, -10]} intensity={5} color="#00f3ff" />
                     <pointLight position={[10, 5, 5]} intensity={5} color="#ff0000" />
 
-                    <Environment preset="night" blur={0.8} />
-                    <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={isLaunched ? 10 : 1} />
+                    <Environment preset="night" blur={0.8} background={false} />
+                    <Stars radius={100} depth={50} count={2000} factor={4} saturation={0} fade speed={isLaunched ? 10 : 1} />
 
                     <PerspectiveCamera makeDefault position={[0, 2, 12]} fov={50} />
 
@@ -222,7 +229,7 @@ const RocketShowcase = () => {
 
                     <ExhaustParticles isEngineOn={isEngineOn} isLaunched={isLaunched} />
 
-                    {!isLaunched && <ContactShadows resolution={1024} scale={50} blur={2} opacity={0.5} far={10} color="#000" />}
+                    {!isLaunched && <ContactShadows resolution={512} scale={50} blur={2} opacity={0.5} far={10} color="#000" />}
                 </Canvas>
             </div>
 
@@ -245,8 +252,8 @@ const RocketShowcase = () => {
                         whileTap={{ scale: 0.95 }}
                         onClick={handleAction}
                         className={`px-12 py-4 rounded-full font-bold text-xl transition-all duration-300 border-2 ${isEngineOn
-                                ? 'bg-orange-600 border-orange-500 text-white shadow-[0_0_30px_rgba(255,165,0,0.5)] animate-pulse'
-                                : 'bg-transparent border-white/20 text-white hover:bg-white hover:text-black hover:border-white'
+                            ? 'bg-orange-600 border-orange-500 text-white shadow-[0_0_30px_rgba(255,165,0,0.5)] animate-pulse'
+                            : 'bg-transparent border-white/20 text-white hover:bg-white hover:text-black hover:border-white'
                             }`}
                     >
                         {!isEngineOn ? 'START ENGINE' : 'LAUNCH MISSION'}

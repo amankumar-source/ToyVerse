@@ -1,7 +1,11 @@
 import { useRef, useEffect, useState } from 'react';
+import { useInView } from 'framer-motion';
 
 export default function ToyCarRunner() {
     const canvasRef = useRef(null);
+    const containerRef = useRef(null);
+    const isInView = useInView(containerRef, { once: false, amount: 0.1 });
+
     const [score, setScore] = useState(0);
     const [gameOver, setGameOver] = useState(false);
     const [gameStarted, setGameStarted] = useState(false);
@@ -15,7 +19,8 @@ export default function ToyCarRunner() {
         speed: 5,
         lastObstacleTime: 0,
         lastStarTime: 0,
-        animId: null
+        animId: null,
+        lastFrameTime: 0
     });
 
     const LANE_WIDTH = 100;
@@ -25,21 +30,20 @@ export default function ToyCarRunner() {
     useEffect(() => {
         if (!gameStarted) return;
 
+        // If not in view, cancel animation and return
+        if (!isInView) {
+            cancelAnimationFrame(state.current.animId);
+            return;
+        }
+
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
 
-        // Reset state
-        state.current = {
-            carX: canvas.width / 2,
-            carLane: 1,
-            obstacles: [],
-            stars: [],
-            speed: 5,
-            lastObstacleTime: 0,
-            lastStarTime: 0,
-            animId: null
-        };
+        // Initialize car position on first run
+        if (state.current.carX === 0) {
+            state.current.carX = canvas.width / 2;
+        }
 
         const handleKeyDown = (e) => {
             if (e.key === 'ArrowLeft') moveLane(-1);
@@ -55,6 +59,10 @@ export default function ToyCarRunner() {
 
         const loop = (timestamp) => {
             if (gameOver) return;
+
+            // Limit frame rate check if needed, but standard RAF is fine
+            // We just need to handle the pause/resume delta correctly if we were using delta time
+            // For this simple game, we can just resume.
 
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
@@ -160,10 +168,10 @@ export default function ToyCarRunner() {
             window.removeEventListener('keydown', handleKeyDown);
             cancelAnimationFrame(state.current.animId);
         };
-    }, [gameStarted, gameOver]);
+    }, [gameStarted, gameOver, isInView]); // Dependency on isInView ensures we restart loop when back in view
 
     return (
-        <div className="relative w-full h-[600px] bg-toy-dark rounded-xl overflow-hidden border-2 border-toy-purple shadow-[0_0_30px_rgba(188,19,254,0.3)]">
+        <div ref={containerRef} className="relative w-full h-[600px] bg-toy-dark rounded-xl overflow-hidden border-2 border-toy-purple shadow-[0_0_30px_rgba(188,19,254,0.3)]">
             {!gameStarted ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20">
                     <h3 className="text-4xl text-toy-neonBlue font-display mb-4">Neon Racer</h3>
