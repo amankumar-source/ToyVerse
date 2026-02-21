@@ -1,13 +1,18 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-gsap.registerPlugin(ScrollTrigger);
+// ScrollTrigger is registered once at app entry (main.jsx)
 
 export default function StorySection() {
     const sectionRef = useRef(null);
     const triggerRef = useRef(null);
     const toysRef = useRef([]);
+    const tweensRef = useRef([]);
+
+    const scrollToProducts = useCallback(() => {
+        document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+    }, []);
 
     useEffect(() => {
         const pin = gsap.fromTo(sectionRef.current, {
@@ -25,9 +30,11 @@ export default function StorySection() {
             }
         });
 
-        // Parallax logic for individual toys
+        tweensRef.current = [pin];
+
         toysRef.current.forEach((toy, i) => {
-            gsap.to(toy, {
+            if (!toy) return;
+            const tween = gsap.to(toy, {
                 x: (i + 1) * 100,
                 rotation: 360,
                 scrollTrigger: {
@@ -36,11 +43,13 @@ export default function StorySection() {
                     end: "2000 top",
                     scrub: 1 + i * 0.5,
                 }
-            })
-        })
+            });
+            tweensRef.current.push(tween);
+        });
 
         return () => {
-            pin.kill();
+            tweensRef.current.forEach((t) => t.kill());
+            tweensRef.current = [];
         };
     }, []);
 
@@ -56,7 +65,7 @@ export default function StorySection() {
                         It started with a spark of imagination. In a world where gravity is optional...
                     </p>
                     <div
-                        ref={el => toysRef.current[0] = el}
+                        ref={(el) => toysRef.current[0] = el}
                         className="absolute top-1/4 right-1/4 w-24 h-24 bg-toy-purple rounded-lg transform rotate-12 shadow-xl"
                     ></div>
                 </div>
@@ -68,7 +77,7 @@ export default function StorySection() {
                         Every toy is designed to bring a smile, crafted with pixel-perfect precision and love.
                     </p>
                     <div
-                        ref={el => toysRef.current[1] = el}
+                        ref={(el) => toysRef.current[1] = el}
                         className="absolute bottom-1/4 left-1/4 w-32 h-32 bg-pink-400 rounded-full shadow-xl"
                     ></div>
                 </div>
@@ -76,11 +85,15 @@ export default function StorySection() {
                 {/* Panel 3 */}
                 <div className="w-screen h-full flex flex-col justify-center items-center relative bg-gradient-to-br from-blue-200 to-indigo-200 p-20 text-toy-dark">
                     <h2 className="text-8xl font-display font-bold mb-8 text-toy-red relative z-10">Join the Fun</h2>
-                    <button className="px-10 py-5 bg-white text-toy-dark text-2xl font-bold rounded-full shadow-2xl hover:scale-110 transition-transform">
+                    {/* ✅ Functional: scrolls to the products section */}
+                    <button
+                        onClick={scrollToProducts}
+                        className="px-10 py-5 bg-white text-toy-dark text-2xl font-bold rounded-full shadow-2xl hover:scale-110 hover:bg-toy-yellow transition-all active:scale-95"
+                    >
                         Start Playing Now
                     </button>
                     <div
-                        ref={el => toysRef.current[2] = el}
+                        ref={(el) => toysRef.current[2] = el}
                         className="absolute top-1/3 right-1/3 w-16 h-16 bg-toy-yellow rounded-full star-shape"
                     ></div>
                 </div>

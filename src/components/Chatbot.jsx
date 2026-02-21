@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Gamepad2, Sparkles, Cpu } from 'lucide-react';
+import { X, Send, Sparkles, Cpu } from 'lucide-react';
 import MagneticButton from './ui/MagneticButton';
 
+// Module-level constants — stable references, never recreated
 const INITIAL_MESSAGES = [
     { id: 1, text: "System Initialized. I am ToyBot v2.0. 🤖", sender: 'bot' },
     { id: 2, text: "Ready to assist with your interstellar toy mission.", sender: 'bot' }
@@ -27,26 +28,35 @@ export default function Chatbot() {
     const [inputValue, setInputValue] = useState("");
     const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef(null);
+    // Store the timeout id so we can clear it on unmount — prevents setState on unmounted component
+    const typingTimerRef = useRef(null);
 
-    const scrollToBottom = () => {
+    const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
+    }, []);
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages, isTyping]);
+    }, [messages, isTyping, scrollToBottom]);
 
-    const handleSend = async (text) => {
+    // Clear the timeout on unmount to prevent potential memory leak / state update on unmounted component
+    useEffect(() => {
+        return () => {
+            if (typingTimerRef.current) {
+                clearTimeout(typingTimerRef.current);
+            }
+        };
+    }, []);
+
+    const handleSend = useCallback((text) => {
         const userText = text || inputValue.trim();
         if (!userText) return;
 
-        // Add user message
-        setMessages(prev => [...prev, { id: Date.now(), text: userText, sender: 'user' }]);
+        setMessages((prev) => [...prev, { id: Date.now(), text: userText, sender: 'user' }]);
         setInputValue("");
         setIsTyping(true);
 
-        // Simulate network delay for "thinking"
-        setTimeout(() => {
+        typingTimerRef.current = setTimeout(() => {
             let botResponse = "Processing... Data not found in local nebula. 🧠";
             const lowerText = userText.toLowerCase();
 
@@ -62,10 +72,12 @@ export default function Chatbot() {
                 botResponse = "Greetings, user! Status: Online and ready.";
             }
 
-            setMessages(prev => [...prev, { id: Date.now() + 1, text: botResponse, sender: 'bot' }]);
+            setMessages((prev) => [...prev, { id: Date.now() + 1, text: botResponse, sender: 'bot' }]);
             setIsTyping(false);
         }, 1200);
-    };
+    }, [inputValue]);
+
+    const handleToggle = useCallback(() => setIsOpen((o) => !o), []);
 
     return (
         <>
@@ -78,7 +90,7 @@ export default function Chatbot() {
                 whileTap={{ scale: 0.9 }}
             >
                 <MagneticButton
-                    onClick={() => setIsOpen(!isOpen)}
+                    onClick={handleToggle}
                     className="w-16 h-16 bg-black/80 backdrop-blur-md rounded-full border border-toy-neonBlue/50 shadow-[0_0_30px_rgba(0,255,255,0.3)] flex items-center justify-center text-white relative group overflow-hidden"
                 >
                     <div className="absolute inset-0 bg-gradient-to-tr from-toy-blue via-transparent to-toy-purple opacity-50 group-hover:opacity-100 transition-opacity" />

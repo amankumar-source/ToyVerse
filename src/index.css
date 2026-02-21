@@ -81,3 +81,69 @@ html.lenis {
 .lenis.lenis-scrolling iframe {
     pointer-events: none;
 }
+
+/* ============================================================
+   CSS Containment for fixed full-screen overlays
+   Tells the browser these elements don't affect outside layout,
+   enabling aggressive paint/layout optimizations.
+   ============================================================ */
+canvas.fixed,
+[class*="z-[999"] {
+    contain: layout style paint;
+}
+
+/* ============================================================
+   RocketShowcase Styles (moved from inline <style> injection)
+   Previously injected on every component render via a <style> tag
+   which included a render-blocking @import for Google Fonts.
+   ============================================================ */
+.font-tech {
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.rocket-scanlines {
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.05) 2px,
+        rgba(0, 0, 0, 0.05) 4px
+    );
+}
+
+.rocket-grid-bg {
+    background-image:
+        linear-gradient(rgba(0, 200, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 200, 255, 0.05) 1px, transparent 1px);
+    background-size: 60px 60px;
+}
+
+.rocket-vignette {
+    background: radial-gradient(ellipse at center, transparent 40%, #050510 100%);
+}
+
+/* ============================================================
+   Accessibility: Reduced Motion
+   Disables heavy animations for users who prefer reduced motion.
+   Improves performance on low-end devices and respects
+   system accessibility settings.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+    .animate-float,
+    .animate-pulse,
+    .animate-bounce,
+    .animate-spin,
+    .animate-ping {
+        animation: none !important;
+    }
+
+    /* Disable CSS transitions for users who prefer no motion */
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+    }
+}

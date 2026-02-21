@@ -1,8 +1,17 @@
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, PerspectiveCamera, Environment, ContactShadows } from '@react-three/drei';
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { useInView } from 'framer-motion';
+
+// Detect mobile / low-end device once at module load time (stable, no re-renders)
+const IS_MOBILE = typeof window !== 'undefined' && window.innerWidth < 768;
+const IS_LOW_END = typeof window !== 'undefined' && (navigator.hardwareConcurrency ?? 4) <= 2;
+
+// Geometry color and position arrays defined outside the component —
+// stable references, not recreated on every render.
+const PARTICLE_COLORS = ["#ff0080", "#00ffff", "#ffdd00", "#9d00ff", "#00ff66"];
+const BG_SHAPE_COLORS = ['#ff0055', '#00f3ff', '#ffe600', '#bc13fe'];
 
 // eslint-disable-next-line no-unused-vars
 function Toy({ position, color, geometry: Geometry, scale = 1, rotation = [0, 0, 0] }) {
@@ -77,24 +86,29 @@ const ToyIcosahedron = (props) => (
 
 export default function Hero() {
     const containerRef = useRef(null);
-    // Only detect if ANY part of the hero is in view
     const isInView = useInView(containerRef, { once: false, amount: 0.1 });
 
-    const [backgroundShapes] = useState(() =>
+    // Adaptive: fewer meshes on mobile/low-end = fewer GPU draw calls per frame
+    const particleCount = IS_LOW_END ? 6 : IS_MOBILE ? 8 : 15;
+
+    // Memoize static decorative data — avoids regenerating on every render
+    const backgroundShapes = useMemo(() =>
         [...Array(10)].map((_, i) => ({
             id: i,
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
             width: `${Math.random() * 300 + 50}px`,
             height: `${Math.random() * 300 + 50}px`,
-            background: `radial-gradient(circle, ${['#ff0055', '#00f3ff', '#ffe600', '#bc13fe'][Math.floor(Math.random() * 4)]} 0%, transparent 70%)`,
+            background: `radial-gradient(circle, ${BG_SHAPE_COLORS[Math.floor(Math.random() * 4)]} 0%, transparent 70%)`,
             animationDuration: `${Math.random() * 10 + 10}s`,
             animationDelay: `${Math.random() * 5}s`
         }))
-    );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        , []); // Empty deps — generated once and stable
 
-    const [floatingParticles] = useState(() =>
-        [...Array(25)].map((_, i) => ({
+    // Adaptive particle array based on device capability
+    const floatingParticles = useMemo(() =>
+        [...Array(particleCount)].map((_, i) => ({
             id: i,
             speed: 0.8 + Math.random(),
             position: [
@@ -103,9 +117,10 @@ export default function Hero() {
                 (Math.random() - 0.5) * 10 - 5
             ],
             geometryArgs: [0.08 + Math.random() * 0.2, 16, 16],
-            color: ["#ff0080", "#00ffff", "#ffdd00", "#9d00ff", "#00ff66"][Math.floor(Math.random() * 5)]
+            color: PARTICLE_COLORS[Math.floor(Math.random() * 5)]
         }))
-    );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        , []); // Empty deps — generated once and stable
 
     return (
         <div ref={containerRef} id="hero" className="h-screen w-full relative bg-sky-300 overflow-hidden">
@@ -125,21 +140,24 @@ export default function Hero() {
                             height: shape.height,
                             background: shape.background,
                             animationDuration: shape.animationDuration,
-                            animationDelay: shape.animationDelay
+                            animationDelay: shape.animationDelay,
+                            // Hint the browser to promote this element to its own layer
+                            willChange: 'transform',
                         }}
                     />
                 ))}
             </div>
 
             <Canvas
-                shadows
-                dpr={[1, 1.5]} // Cap DPR for performance
+                shadows={!IS_MOBILE}          // Shadow maps are expensive on mobile GPUs
+                dpr={IS_MOBILE ? 1 : [1, 1.5]} // Fixed DPR=1 on mobile; adaptive on desktop
+                gl={{ antialias: !IS_MOBILE, powerPreference: 'high-performance' }}
                 className="z-10 relative"
-                frameloop={isInView ? "always" : "never"} // Pause when out of view
+                frameloop={isInView ? "always" : "never"}
             >
                 <PerspectiveCamera makeDefault position={[0, 0, 12]} fov={50} />
                 <ambientLight intensity={0.8} />
-                <spotLight position={[10, 10, 10]} angle={0.25} penumbra={1} intensity={25} castShadow />
+                <spotLight position={[10, 10, 10]} angle={0.25} penumbra={1} intensity={25} castShadow={!IS_MOBILE} />
                 <pointLight position={[-10, -10, -10]} intensity={8} color="#00f3ff" />
                 <pointLight position={[10, -5, 5]} intensity={8} color="#ffe600" />
 
@@ -150,7 +168,7 @@ export default function Hero() {
                     <ToyTorus position={[3, -2, 2]} color="#9d00ff" scale={1.2} /> {/* Purple */}
                     <ToyIcosahedron position={[0, 3, -4]} color="#00ff66" scale={0.8} /> {/* Lime Green */}
 
-                    {/* Floating Particles - Reduced Count */}
+                    {/* Floating Particles - Reduced from 25 to 15 */}
                     {floatingParticles.map((particle) => (
                         <Float key={particle.id} speed={particle.speed} floatIntensity={2} position={particle.position}>
                             <mesh>

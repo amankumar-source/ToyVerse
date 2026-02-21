@@ -3,8 +3,6 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SmartImage from './ui/SmartImage';
 
-gsap.registerPlugin(ScrollTrigger);
-
 const categories = [
     {
         id: 1,
